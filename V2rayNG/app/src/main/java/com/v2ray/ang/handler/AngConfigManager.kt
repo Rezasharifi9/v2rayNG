@@ -557,6 +557,12 @@ object AngConfigManager {
                 }
             }
             LogUtil.i(AppConfig.TAG, url)
+
+            // Quota info is independent of the config payload, so refresh it even
+            // if fetching the configs below ends up failing.
+            runCatching { SubscriptionInfoManager.refresh(it.guid, it.subscription.url) }
+                .onFailure { e -> LogUtil.e(AppConfig.TAG, "Failed to refresh subscription info", e) }
+
             val userAgent = it.subscription.userAgent
             val requestHeaders = it.subscription.requestHeaders
             val proxyUsername = SettingsManager.getSocksUsername()

@@ -28,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.ui.compose.LocalDarkTheme
 import com.v2ray.ang.ui.compose.QRCodeDialog
 import kotlinx.coroutines.delay
@@ -49,7 +48,6 @@ fun MainScreen(
     val displayText = uiState.statusText
     val selectedGuid = uiState.selectedGuid
     val doubleColumnDisplay = uiState.doubleColumnDisplay
-    val confirmRemove = uiState.confirmRemove
     val shareQRCodeBitmap = uiState.shareQRCodeBitmap
 
     val isDarkTheme = LocalDarkTheme.current
@@ -57,15 +55,6 @@ fun MainScreen(
     val scope = rememberCoroutineScope()
     var showSearch by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
-    var showDelAllConfirm by remember { mutableStateOf(false) }
-    var showDelDuplicateConfirm by remember { mutableStateOf(false) }
-    var showDelInvalidConfirm by remember { mutableStateOf(false) }
-    var showRemoveConfirm by remember { mutableStateOf<String?>(null) }
-
-    var shareTarget by remember { mutableStateOf<Triple<String, ProfileItem, Boolean>?>(null) }
-    val removeServer: (String) -> Unit = { guid ->
-        if (confirmRemove) showRemoveConfirm = guid else onAction(MainAction.RemoveServer(guid))
-    }
 
     val pagerState = rememberPagerState(
         initialPage = 0,
@@ -157,40 +146,21 @@ fun MainScreen(
         }
     }
 
-    MainDialogs(
-        showDelAllConfirm = showDelAllConfirm,
-        onDismissDelAll = { showDelAllConfirm = false },
-        onConfirmDelAll = { showDelAllConfirm = false; onAction(MainAction.RemoveAllServers) },
-        showDelDuplicateConfirm = showDelDuplicateConfirm,
-        onDismissDelDuplicate = { showDelDuplicateConfirm = false },
-        onConfirmDelDuplicate = { showDelDuplicateConfirm = false; onAction(MainAction.RemoveDuplicateServers) },
-        showDelInvalidConfirm = showDelInvalidConfirm,
-        onDismissDelInvalid = { showDelInvalidConfirm = false },
-        onConfirmDelInvalid = { showDelInvalidConfirm = false; onAction(MainAction.RemoveInvalidServers) },
-        showRemoveConfirm = showRemoveConfirm,
-        onDismissRemove = { showRemoveConfirm = null },
-        onConfirmRemove = { guid -> showRemoveConfirm = null; onAction(MainAction.RemoveServer(guid)) }
-    )
-
-    if (shareTarget != null) {
-        val (guid, profile, more) = shareTarget!!
-        ShareMethodDialog(
-            guid = guid,
-            profile = profile,
-            more = more,
-            onDismiss = { shareTarget = null },
-            onAction = onAction,
-            onRemove = removeServer,
-        )
-    }
     if (shareQRCodeBitmap != null) {
         QRCodeDialog(bitmap = shareQRCodeBitmap, onDismiss = { onAction(MainAction.DismissQRCodeDialog) })
+    }
+
+    // Opening the drawer is the only moment the quota is on screen, so that is
+    // when it is worth re-checking with the panel.
+    LaunchedEffect(drawerState.isOpen) {
+        if (drawerState.isOpen) mainViewModel.loadSubscriptionInfo()
     }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             MainDrawerContent(
+                subscriptionInfo = uiState.subscriptionInfo,
                 onNavigate = { route ->
                     scope.launch { drawerState.close() }
                     onNavigate(route)
@@ -216,10 +186,7 @@ fun MainScreen(
                     },
                     onSearchToggle = { show: Boolean -> showSearch = show },
                     onMenuClick = { scope.launch { drawerState.open() } },
-                    onAction = onAction,
-                    onDelAllConfig = { showDelAllConfirm = true },
-                    onDelDuplicateConfig = { showDelDuplicateConfirm = true },
-                    onDelInvalidConfig = { showDelInvalidConfirm = true }
+                    onAction = onAction
                 )
             },
             bottomBar = {
@@ -240,6 +207,11 @@ fun MainScreen(
                         .fillMaxSize()
                         .padding(innerPadding)
                 ) {
+                    ServerQuickActionsBar(
+                        enabled = !isLoading,
+                        onAction = onAction
+                    )
+
                     if (groups.size > 1) {
                         GroupTabBar(
                             groups = groups,
@@ -270,19 +242,10 @@ fun MainScreen(
                             mainViewModel = mainViewModel,
                             selectedGuid = selectedGuid,
                             doubleColumnDisplay = doubleColumnDisplay,
-                            confirmRemove = confirmRemove,
                             searchQuery = searchQuery,
                             lazyListStates = lazyListStates,
                             lazyGridStates = lazyGridStates,
                             onSelectServer = { guid -> onAction(MainAction.SelectServer(guid)) },
-                            onEditServer = { guid, profile -> onAction(MainAction.EditServer(guid, profile)) },
-                            onShareServer = { guid, profile ->
-                                shareTarget = Triple(guid, profile, false)
-                            },
-                            onMoreServer = { guid, profile ->
-                                shareTarget = Triple(guid, profile, true)
-                            },
-                            onRemoveServer = removeServer,
                             contentPadding = PaddingValues(
                                 start = 0.dp,
                                 top = 0.dp,

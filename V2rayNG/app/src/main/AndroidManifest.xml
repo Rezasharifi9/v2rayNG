@@ -192,6 +192,9 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".ui.purchase.PurchaseActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.checkupdate.CheckUpdateActivity"
             android:exported="false" />
         <activity

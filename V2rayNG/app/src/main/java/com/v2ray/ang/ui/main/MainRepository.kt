@@ -13,10 +13,12 @@ import com.v2ray.ang.dto.TestServiceMessage
 import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.dto.entities.ServerAffiliationInfo
 import com.v2ray.ang.dto.entities.SubscriptionCache
+import com.v2ray.ang.dto.entities.SubscriptionInfo
 import com.v2ray.ang.dto.entities.SubscriptionItem
 import com.v2ray.ang.handler.AngConfigManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.SettingsManager
+import com.v2ray.ang.handler.SubscriptionInfoManager
 import com.v2ray.ang.handler.SubscriptionUpdater
 import com.v2ray.ang.helper.MessageHelper
 import com.v2ray.ang.util.LogUtil
@@ -136,6 +138,12 @@ class MainRepository(
 
     override fun getSubscriptionItem(id: String): SubscriptionItem? =
         MmkvManager.decodeSubscription(id)
+
+    override fun getCachedSubscriptionInfo(id: String): SubscriptionInfo? =
+        SubscriptionInfoManager.getCached(id)
+
+    override fun loadSubscriptionInfo(id: String): SubscriptionInfo? =
+        SubscriptionInfoManager.getOrRefresh(id)
 
     override fun getServerGuidList(groupId: String): List<String> =
         if (groupId.isEmpty()) {

@@ -5,6 +5,26 @@ plugins {
     id("com.jaredsburrows.license")
 }
 
+/**
+ * Reads `<rootDir>/.env` so deployment-specific endpoints live in a single file
+ * instead of being scattered through the sources. Missing file or missing key
+ * falls back to [fallback], keeping a fresh checkout buildable.
+ */
+val envFile = rootProject.file(".env")
+val envValues: Map<String, String> = if (envFile.exists()) {
+    envFile.readLines()
+        .map { it.trim() }
+        .filter { it.isNotEmpty() && !it.startsWith("#") && it.contains('=') }
+        .associate { line ->
+            val separator = line.indexOf('=')
+            line.substring(0, separator).trim() to line.substring(separator + 1).trim().trim('"')
+        }
+} else {
+    emptyMap()
+}
+
+fun env(key: String, fallback: String): String = envValues[key]?.takeIf { it.isNotEmpty() } ?: fallback
+
 android {
     namespace = "com.v2ray.ang"
     compileSdk = 37
@@ -36,6 +56,29 @@ android {
         }
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Panel API endpoint, sourced from V2rayNG/.env (SUB_API_BASE_URL).
+        buildConfigField(
+            "String",
+            "SUB_API_BASE_URL",
+            "\"${env("SUB_API_BASE_URL", "https://panel.darkbaz.com").trimEnd('/')}\""
+        )
+
+        // Brand shown beside the quota in the main top bar, sourced from
+        // V2rayNG/.env (BRAND_NAME). Empty leaves the quota unbranded.
+        buildConfigField(
+            "String",
+            "BRAND_NAME",
+            "\"${env("BRAND_NAME", "")}\""
+        )
+
+        // Agent token (tbUsers.Token) this build sells for. Authenticates the
+        // /User/* endpoints; empty means the purchase screen stays unavailable.
+        buildConfigField(
+            "String",
+            "AGENT_API_TOKEN",
+            "\"${env("AGENT_API_TOKEN", "")}\""
+        )
     }
 
     buildTypes {
@@ -45,6 +88,12 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            // Keep debug builds installable alongside a release-signed v2rayNG,
+            // whose signature would otherwise reject the update.
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
         }
     }
 

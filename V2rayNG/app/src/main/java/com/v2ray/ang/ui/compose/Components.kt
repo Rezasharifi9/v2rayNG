@@ -63,6 +63,7 @@ import sh.calvin.reorderable.ReorderableCollectionItemScope
 fun AppTopBar(
     title: String,
     onBackClick: () -> Unit,
+    titleStyle: TextStyle? = null,
     isLoading: Boolean = false,
     isSearchActive: Boolean = false,
     searchQuery: String = "",
@@ -81,6 +82,8 @@ fun AppTopBar(
                         onQueryChange = onSearchQueryChange,
                         placeholder = searchPlaceholder
                     )
+                } else if (titleStyle != null) {
+                    Text(text = title, style = titleStyle)
                 } else {
                     Text(text = title)
                 }

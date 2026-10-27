@@ -2,6 +2,7 @@ package com.v2ray.ang.ui.main
 
 import com.v2ray.ang.dto.GroupMapItem
 import com.v2ray.ang.dto.LocateTarget
+import com.v2ray.ang.dto.entities.SubscriptionInfo
 
 /**
  * Main UI state
@@ -16,7 +17,9 @@ data class MainUiState(
     val locateTarget: LocateTarget? = null,
     val confirmRemove: Boolean = false,
     val doubleColumnDisplay: Boolean = false,
-    val shareQRCodeBitmap: android.graphics.Bitmap? = null
+    val shareQRCodeBitmap: android.graphics.Bitmap? = null,
+    /** Quota summary of the active subscription, shown in the navigation drawer. */
+    val subscriptionInfo: SubscriptionInfo? = null
 )
 
 /**

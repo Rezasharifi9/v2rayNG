@@ -119,9 +119,18 @@ class RealPingWorkerService(
         ) {
             val url = config.server.orEmpty()
             val port = config.serverPort.orEmpty().toInt()
-            val tcpTime = SpeedtestManager.socketConnectTime(url, port, 1000)
 
-            return tcpTime
+            // The first connect also pays for DNS resolution and route setup, which
+            // is why a freshly started test round used to report inflated latency and
+            // only a second manual run showed the real value. Probe twice in a row and
+            // keep the better sample so a single tap gives the warm figure.
+            val firstTime = SpeedtestManager.socketConnectTime(url, port, 1000)
+            if (firstTime <= -1L) {
+                return retFailure
+            }
+            val secondTime = SpeedtestManager.socketConnectTime(url, port, 1000)
+
+            return if (secondTime <= -1L) firstTime else minOf(firstTime, secondTime)
         }
 
         return retFailure

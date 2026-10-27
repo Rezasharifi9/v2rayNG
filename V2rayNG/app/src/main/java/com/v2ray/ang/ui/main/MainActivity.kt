@@ -20,6 +20,7 @@ import com.v2ray.ang.extension.toast
 import com.v2ray.ang.extension.toastError
 import com.v2ray.ang.extension.toastSuccess
 import com.v2ray.ang.handler.AngConfigManager
+import com.v2ray.ang.handler.DeviceRegistrationManager
 import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.handler.SettingsChangeManager
 import com.v2ray.ang.handler.SettingsManager
@@ -29,6 +30,7 @@ import com.v2ray.ang.ui.base.HelperBaseComponentActivity
 import com.v2ray.ang.ui.checkupdate.CheckUpdateActivity
 import com.v2ray.ang.ui.logcat.LogcatActivity
 import com.v2ray.ang.ui.perappproxy.PerAppProxyActivity
+import com.v2ray.ang.ui.purchase.PurchaseActivity
 import com.v2ray.ang.ui.routing.RoutingSettingActivity
 import com.v2ray.ang.ui.server.ProfileEditorResult
 import com.v2ray.ang.ui.server.ServerCustomConfigActivity
@@ -93,7 +95,14 @@ class MainActivity : HelperBaseComponentActivity() {
         super.onCreate(savedInstanceState)
         mainViewModel.onAction(MainAction.Initialize)
 
-        checkAndRequestPermission(PermissionType.POST_NOTIFICATIONS) {}
+        checkAndRequestPermission(PermissionType.POST_NOTIFICATIONS) {
+            // Re-run after the prompt so the panel learns whether push is allowed.
+            DeviceRegistrationManager.sync(this)
+        }
+
+        // First launch reports this handset to the panel, which files it under the
+        // agent this build sells for. Retried in the background until it lands.
+        DeviceRegistrationManager.sync(this)
     }
 
     @Composable
@@ -136,6 +145,7 @@ class MainActivity : HelperBaseComponentActivity() {
 
     private fun navigateTo(destination: String) {
         val intent = when (destination) {
+            "purchase" -> Intent(this, PurchaseActivity::class.java)
             "sub_setting" -> Intent(this, SubSettingActivity::class.java)
             "per_app_proxy" -> Intent(this, PerAppProxyActivity::class.java)
             "routing_setting" -> Intent(this, RoutingSettingActivity::class.java)

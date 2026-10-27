@@ -76,6 +76,7 @@ class MainViewModel(
     private var preloadJob: Job? = null
     private var selectedGroupLoadJob: Job? = null
     private var reloadJob: Job? = null
+    private var subscriptionInfoJob: Job? = null
 
     @Volatile
     private var testingGroupId: String? = null
@@ -163,7 +164,10 @@ class MainViewModel(
         when (action) {
             MainAction.Initialize -> initialize()
             MainAction.RefreshGroups -> setupGroupTab(forceRefresh = true)
-            MainAction.TestAllServers -> testAllRealPing(true)
+            // Both entry points measure the real delay through the relay: a plain
+            // TCP handshake only proves the edge is reachable, which says nothing
+            // about whether the server actually forwards traffic.
+            MainAction.TestAllServers -> testAllRealPing()
             MainAction.TestRealAllServers -> testAllRealPing()
             MainAction.CancelTesting -> cancelAllPing()
             MainAction.RemoveAllServers -> removeAllServerAsync()
@@ -281,6 +285,71 @@ class MainViewModel(
 
     fun getSubscriptions(): List<SubscriptionCache> = dataSource.getSubscriptions()
 
+    // ---------- Subscription quota info ----------
+    /**
+     * The group tab may be the synthetic "All" entry, which has no id and thus no
+     * token; fall back to the first real subscription so the drawer still has
+     * something to show.
+     */
+    private fun resolveInfoSubId(): String =
+        uiState.value.selectedGroupId.takeIf { it.isNotBlank() }
+            ?: uiState.value.groups.firstOrNull { it.id.isNotBlank() }?.id
+            ?: dataSource.getSubsList().firstOrNull().orEmpty()
+
+    /**
+     * Publishes the cached quota info immediately, then refreshes it from the
+     * panel in the background.
+     */
+    fun loadSubscriptionInfo() {
+        val subId = resolveInfoSubId()
+        if (subId.isBlank()) {
+            _uiState.update { it.copy(subscriptionInfo = null) }
+            return
+        }
+        _uiState.update { it.copy(subscriptionInfo = dataSource.getCachedSubscriptionInfo(subId)) }
+
+        subscriptionInfoJob?.cancel()
+        subscriptionInfoJob = viewModelScope.launch(ioDispatcher) {
+            try {
+                val info = dataSource.loadSubscriptionInfo(subId)
+                ensureActive()
+                // The selection may have moved on while the request was in flight.
+                if (resolveInfoSubId() == subId) {
+                    _uiState.update { it.copy(subscriptionInfo = info) }
+                }
+                refreshGroupNames(skipSubId = subId)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                LogUtil.e(AppConfig.TAG, "Failed to load subscription info", error)
+            }
+        }
+    }
+
+    /**
+     * Fetches the remaining subscriptions' info so every tab can carry the name
+     * the panel reports instead of the importer's placeholder remark.
+     */
+    private suspend fun refreshGroupNames(skipSubId: String) {
+        val groups = uiState.value.groups
+        groups.forEach { group ->
+            currentCoroutineContext().ensureActive()
+            if (group.id.isNotBlank() && group.id != skipSubId) {
+                dataSource.loadSubscriptionInfo(group.id)
+            }
+        }
+        currentCoroutineContext().ensureActive()
+        val renamed = groups.map { group ->
+            val name = dataSource.getCachedSubscriptionInfo(group.id)?.name?.takeIf { it.isNotBlank() }
+            if (name != null && name != group.remarks) group.copy(remarks = name) else group
+        }
+        if (renamed != groups) {
+            _uiState.update { state ->
+                if (state.groups == groups) state.copy(groups = renamed) else state
+            }
+        }
+    }
+
     private fun resolveSelectedGroup(groups: List<GroupMapItem>): String {
         val current = uiState.value.selectedGroupId
         val resolved = when {
@@ -316,9 +385,20 @@ class MainViewModel(
                 if (forceRefresh) {
                     cacheMutex.withLock { groupDataCache.clear() }
                 }
-                val groups = dataSource.getSubscriptions().map {
-                    GroupMapItem(id = it.guid, remarks = it.subscription.remarks)
-                }
+                val groups = dataSource.getSubscriptions()
+                    // The default group is an internal bucket for ungrouped servers;
+                    // it stays in storage but is not a tab the user should see.
+                    .filterNot { it.guid == AppConfig.DEFAULT_SUBSCRIPTION_ID }
+                    .map {
+                        GroupMapItem(
+                            id = it.guid,
+                            // Prefer the name the panel reports over the placeholder
+                            // remark the importer generated ("import sub").
+                            remarks = dataSource.getCachedSubscriptionInfo(it.guid)?.name
+                                ?.takeIf { name -> name.isNotBlank() }
+                                ?: it.subscription.remarks
+                        )
+                    }
                 val selectedGroup = resolveSelectedGroup(groups)
                 val validIds = groups.mapTo(HashSet()) { it.id }
                 groupPageFlows.keys.removeAll { it !in validIds }
@@ -332,6 +412,7 @@ class MainViewModel(
                     )
                 }
                 groups.forEach { mutableServersForGroup(it.id) }
+                loadSubscriptionInfo()
 
                 if (groups.isEmpty()) {
                     cacheMutex.withLock { groupDataCache.clear() }
@@ -420,6 +501,8 @@ class MainViewModel(
                         setupGroupTab(forceRefresh = true)
                         refreshSelectedGuid()
                     }
+                    // updateConfigViaSub already refreshed the cached quota; pull it into the UI.
+                    loadSubscriptionInfo()
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (e: Exception) {
@@ -573,6 +656,7 @@ class MainViewModel(
         if (uiState.value.selectedGroupId != id) {
             dataSource.setSelectedSubscriptionId(id)
             _uiState.update { it.copy(selectedGroupId = id) }
+            loadSubscriptionInfo()
         }
         selectedGroupLoadJob?.cancel()
         selectedGroupLoadJob = viewModelScope.launch(ioDispatcher) {
@@ -765,6 +849,7 @@ class MainViewModel(
         selectedGroupLoadJob?.cancel()
         reloadJob?.cancel()
         filterJob?.cancel()
+        subscriptionInfoJob?.cancel()
         cancelAllPing()
         dataSource.close()
         super.onCleared()

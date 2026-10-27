@@ -335,6 +335,87 @@
     <string name="title_real_ping_all_server">Real delay config</string>
     <string name="title_user_asset_setting">Asset files</string>
     <string name="title_sort_by_test_results">Sorting by test results</string>
+    <!-- Quick-action bar above the server list. Intentionally Persian in the
+         default locale: the rest of the UI stays English. -->
+    <string name="quick_action_update_subscription" translatable="false">بروزرسانی اشتراک</string>
+    <string name="quick_action_ping_all" translatable="false">تست سرورها</string>
+    <string name="quick_action_sort_by_test" translatable="false">مرتب‌سازی</string>
+    <!-- Subscription quota panel at the top of the navigation drawer. Same
+         convention as the quick-action bar: Persian in the default locale. -->
+    <string name="sub_info_volume_label" translatable="false">حجم</string>
+    <string name="sub_info_volume_format" translatable="false">%1$s / %2$s گیگابایت</string>
+    <string name="sub_info_expire_label" translatable="false">تاریخ انقضا</string>
+    <string name="sub_info_remaining_label" translatable="false">زمان باقی‌مانده</string>
+    <string name="sub_info_remaining_days_format" translatable="false">%1$d روز</string>
+    <string name="sub_info_unlimited" translatable="false">نامحدود</string>
+    <string name="sub_info_expired" translatable="false">منقضی شده</string>
+    <string name="sub_info_unavailable" translatable="false">اطلاعات اشتراک در دسترس نیست</string>
+    <!-- Purchase wizard: pick a subscription, pick a tariff, review, pay. Same
+         convention as the rest of the panel-facing UI: Persian in the default
+         locale. The invoice wording deliberately mirrors the Telegram bot's. -->
+    <string name="title_purchase" translatable="false">خرید / تمدید</string>
+    <string name="purchase_price_format" translatable="false">%1$s تومان</string>
+    <string name="purchase_amount_rial_format" translatable="false">%1$s ریال</string>
+    <string name="purchase_empty" translatable="false">در حال حاضر تعرفه‌ای برای فروش وجود ندارد</string>
+    <string name="purchase_load_failed" translatable="false">دریافت لیست تعرفه‌ها با خطا مواجه شد</string>
+    <string name="purchase_not_configured" translatable="false">امکان خرید در این نسخه فعال نیست</string>
+    <string name="purchase_retry" translatable="false">تلاش مجدد</string>
+    <!-- Wizard chrome -->
+    <string name="purchase_step_subscription" translatable="false">انتخاب اشتراک</string>
+    <string name="purchase_step_plan" translatable="false">انتخاب تعرفه</string>
+    <string name="purchase_step_review" translatable="false">بررسی اطلاعات</string>
+    <string name="purchase_step_payment" translatable="false">پرداخت فاکتور</string>
+    <string name="purchase_step_counter_format" translatable="false">مرحله %1$d از %2$d</string>
+    <string name="purchase_next" translatable="false">مرحله بعد</string>
+    <string name="purchase_back" translatable="false">مرحله قبل</string>
+    <string name="purchase_create_invoice" translatable="false">ساخت فاکتور</string>
+    <string name="purchase_paid" translatable="false">پرداخت کردم</string>
+    <string name="purchase_restart" translatable="false">انصراف و شروع دوباره</string>
+    <!-- Step 1 -->
+    <string name="purchase_subscription_hint" translatable="false">کدام اشتراک را می‌خواهی تمدید کنی؟</string>
+    <string name="purchase_new_subscription_title" translatable="false">اشتراک جدید می‌خواهم</string>
+    <string name="purchase_new_subscription_desc" translatable="false">یک اشتراک تازه ساخته می‌شود و خودکار به لیست اضافه می‌شود</string>
+    <string name="purchase_no_subscriptions" translatable="false">هنوز اشتراکی روی این گوشی ثبت نشده است</string>
+    <string name="purchase_sub_expire_format" translatable="false">انقضا %1$s</string>
+    <string name="purchase_sub_remaining_format" translatable="false">%1$d روز باقی‌مانده</string>
+    <string name="purchase_sub_expired" translatable="false">منقضی شده</string>
+    <string name="purchase_sub_no_expiry" translatable="false">بدون تاریخ انقضا</string>
+    <!-- Step 2 -->
+    <string name="purchase_plan_hint" translatable="false">تعرفه مورد نظرت را انتخاب کن</string>
+    <string name="purchase_plan_month_format" translatable="false">%1$d ماهه</string>
+    <string name="purchase_plan_volume_format" translatable="false">%1$s گیگ</string>
+    <string name="purchase_plan_unlimited" translatable="false">نامحدود</string>
+    <string name="purchase_plan_unlimited_devices_format" translatable="false">نامحدود • %1$d کاربر</string>
+    <string name="purchase_selected_renew_format" translatable="false">تمدید %1$s</string>
+    <string name="purchase_selected_new" translatable="false">اشتراک جدید</string>
+    <!-- Step 3 -->
+    <string name="purchase_review_hint" translatable="false">قبل از ساخت فاکتور یک بار اطلاعات را چک کن</string>
+    <string name="purchase_review_sub_label" translatable="false">اشتراک</string>
+    <string name="purchase_review_token_label" translatable="false">توکن اشتراک</string>
+    <string name="purchase_review_token_new" translatable="false">بعد از پرداخت ساخته می‌شود</string>
+    <string name="purchase_review_plan_label" translatable="false">تعرفه</string>
+    <string name="purchase_review_price_label" translatable="false">مبلغ تعرفه</string>
+    <!-- Step 4: wording mirrors Tools/BotInvoiceGuard.cs in the panel -->
+    <string name="purchase_invoice_registered" translatable="false">✅ تراکنش شما با موفقیت ثبت شد</string>
+    <string name="purchase_invoice_tracking_label" translatable="false">کد پیگیری</string>
+    <string name="purchase_invoice_amount_intro" translatable="false">💳 لطفاً مبلغ زیر را به شماره کارت زیر واریز کن :</string>
+    <string name="purchase_invoice_card_holder_format" translatable="false">به نام : %1$s</string>
+    <string name="purchase_invoice_tip_copy" translatable="false">🔹 روی مبلغ بزن تا خودش کپی بشه — لازم نیست حفظش کنی 😌</string>
+    <string name="purchase_invoice_tip_exact" translatable="false">🔹 حتماً مبلغ رو دقیقاً با سه رقم آخر واریز کن. اگه مبلغ رو دقیق نزنی، سیستم نمی‌تونه تراکنشت رو تشخیص بده ❗️</string>
+    <string name="purchase_invoice_note_title" translatable="false">⚠️ نکته مهم</string>
+    <string name="purchase_invoice_note_expiry" translatable="false">هر فاکتور فقط ۲۴ ساعت اعتبار داره. اگه پیام «منقضی شدن فاکتور» برات اومد، دیگه هیچ مبلغی واریز نکن ❌</string>
+    <string name="purchase_invoice_note_wrong_amount" translatable="false">🔺 حواست باشه! اگه مبلغ اشتباه واریز بشه، امکان برگشت وجه وجود نداره 🙏</string>
+    <string name="purchase_invoice_note_apps" translatable="false">⚠️ با اپلیکیشن‌های آپ و ۷۸۰ واریز نکن، این اپلیکیشن‌ها محدودیت واریزی دارند</string>
+    <string name="purchase_copy_amount" translatable="false">کپی مبلغ</string>
+    <string name="purchase_copy_card" translatable="false">کپی شماره کارت</string>
+    <string name="purchase_copied" translatable="false">کپی شد</string>
+    <string name="purchase_payment_pending" translatable="false">هنوز واریزی برای این فاکتور ثبت نشده است. اگر همین حالا واریز کردی، چند دقیقه دیگر دوباره تلاش کن.</string>
+    <string name="purchase_success_new" translatable="false">اشتراک جدید ساخته شد و به لیست اضافه شد</string>
+    <string name="purchase_success_renew" translatable="false">اشتراک با موفقیت تمدید شد</string>
+    <string name="purchase_success_title" translatable="false">انجام شد</string>
+    <string name="purchase_success_confirm" translatable="false">باشه</string>
+    <string name="purchase_error_network" translatable="false">ارتباط با سرور برقرار نشد</string>
+    <string name="purchase_error_link_missing" translatable="false">پرداخت تائید شد ولی لینک اشتراک هنوز آماده نیست</string>
     <string name="title_filter_config">Filter config</string>
     <string name="filter_config_all">All</string>
     <string name="summary_scan_qrcode">Click screen open the camera scan</string>

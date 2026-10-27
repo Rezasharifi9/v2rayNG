@@ -23,7 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.v2ray.ang.BuildConfig
 import com.v2ray.ang.R
 import com.v2ray.ang.ui.compose.AppTopBar
 import com.v2ray.ang.ui.compose.verticalScrollbar
@@ -38,10 +41,7 @@ fun MainTopBar(
     onSearchClose: () -> Unit,
     onSearchToggle: (Boolean) -> Unit,
     onMenuClick: () -> Unit,
-    onAction: (MainAction) -> Unit,
-    onDelAllConfig: () -> Unit,
-    onDelDuplicateConfig: () -> Unit,
-    onDelInvalidConfig: () -> Unit
+    onAction: (MainAction) -> Unit
 ) {
     var showImportMenu by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
@@ -51,9 +51,21 @@ fun MainTopBar(
     val navBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val maxMenuHeight = LocalConfiguration.current.screenHeightDp.dp - statusBarHeight - navBarHeight - 20.dp
 
+    // The header carries the brand and nothing else; the quota lives in the
+    // drawer, where there is room to show it properly.
+    val brand = BuildConfig.BRAND_NAME.takeIf { it.isNotEmpty() }
+
     AppTopBar(
-        title = stringResource(R.string.title_server),
+        title = brand ?: stringResource(R.string.title_server),
         onBackClick = {},
+        titleStyle = if (brand != null) {
+            MaterialTheme.typography.titleMedium.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp
+            )
+        } else {
+            null
+        },
         isLoading = isLoading,
         isSearchActive = showSearch,
         searchQuery = searchQuery,
@@ -115,10 +127,7 @@ fun MainTopBar(
                         onAction = { action ->
                             showMenu = false
                             onAction(action)
-                        },
-                        onDelAllConfig = { showMenu = false; onDelAllConfig() },
-                        onDelDuplicateConfig = { showMenu = false; onDelDuplicateConfig() },
-                        onDelInvalidConfig = { showMenu = false; onDelInvalidConfig() }
+                        }
                     )
                 }
             }

@@ -5,8 +5,10 @@ import com.v2ray.ang.AppConfig.LOOPBACK
 import com.v2ray.ang.BuildConfig
 import com.v2ray.ang.dto.UrlContentRequest
 import okhttp3.Credentials
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.io.IOException
 import java.net.IDN
@@ -19,7 +21,55 @@ import java.net.URI
 import java.net.URL
 import java.util.concurrent.TimeUnit
 
+/**
+ * Raw outcome of an HTTP call whose body is JSON in both the success and the
+ * failure case, so the caller can tell "the panel said no" apart from "the panel
+ * could not be reached".
+ */
+data class JsonHttpResponse(val code: Int, val body: String?) {
+    val isSuccessful: Boolean get() = code in 200..299
+}
+
 object HttpUtil {
+
+    private val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
+
+    /**
+     * POSTs a JSON body and returns the response as-is.
+     *
+     * @param url The endpoint to call.
+     * @param jsonBody The request body, already serialized.
+     * @param headers Extra request headers, e.g. authorization.
+     * @param timeout The timeout value in milliseconds.
+     * @return The status code together with the raw body, or null when the
+     *         request never got an answer.
+     */
+    fun postJson(
+        url: String,
+        jsonBody: String,
+        headers: Map<String, String> = emptyMap(),
+        timeout: Int = 15000
+    ): JsonHttpResponse? {
+        val client = buildOkHttpClient(timeout, 0, null, null, followRedirects = true)
+        val requestBuilder = Request.Builder()
+            .url(url)
+            .post(jsonBody.toRequestBody(JSON_MEDIA_TYPE))
+            .header("Connection", "close")
+        for ((key, value) in headers) {
+            try {
+                requestBuilder.header(key, value)
+            } catch (_: IllegalArgumentException) {
+            }
+        }
+        return try {
+            client.newCall(requestBuilder.build()).execute().use { response ->
+                JsonHttpResponse(response.code, response.body?.string())
+            }
+        } catch (e: Exception) {
+            LogUtil.e(AppConfig.TAG, "Failed to post JSON to $url", e)
+            null
+        }
+    }
 
     /**
      * Converts the domain part of a URL string to its IDN (Punycode, ASCII Compatible Encoding) format.

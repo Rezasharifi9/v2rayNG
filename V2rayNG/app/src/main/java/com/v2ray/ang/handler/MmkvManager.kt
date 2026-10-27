@@ -16,6 +16,7 @@ import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.dto.entities.RulesetItem
 import com.v2ray.ang.dto.entities.ServerAffiliationInfo
 import com.v2ray.ang.dto.entities.SubscriptionCache
+import com.v2ray.ang.dto.entities.SubscriptionInfo
 import com.v2ray.ang.dto.entities.SubscriptionItem
 import com.v2ray.ang.dto.entities.WebDavConfig
 import com.v2ray.ang.util.JsonUtil
@@ -33,6 +34,10 @@ object MmkvManager {
     private const val ID_SERVER_RAW = "SERVER_RAW"
     private const val ID_SERVER_AFF = "SERVER_AFF"
     private const val ID_SUB = "SUB"
+
+    // Kept separate from ID_SUB: initSubsList() treats every key in that store as
+    // a subscription id, so cached quota info must not live alongside it.
+    private const val ID_SUB_INFO = "SUB_INFO"
     private const val ID_ASSET = "ASSET"
     private const val ID_SETTING = "SETTING"
     private const val KEY_SELECTED_SERVER = "SELECTED_SERVER"
@@ -46,6 +51,7 @@ object MmkvManager {
     private val serverRawStorage by lazy { MMKV.mmkvWithID(ID_SERVER_RAW, MMKV.MULTI_PROCESS_MODE) }
     private val serverAffStorage by lazy { MMKV.mmkvWithID(ID_SERVER_AFF, MMKV.MULTI_PROCESS_MODE) }
     private val subStorage by lazy { MMKV.mmkvWithID(ID_SUB, MMKV.MULTI_PROCESS_MODE) }
+    private val subInfoStorage by lazy { MMKV.mmkvWithID(ID_SUB_INFO, MMKV.MULTI_PROCESS_MODE) }
     private val assetStorage by lazy { MMKV.mmkvWithID(ID_ASSET, MMKV.MULTI_PROCESS_MODE) }
     private val settingsStorage by lazy { MMKV.mmkvWithID(ID_SETTING, MMKV.MULTI_PROCESS_MODE) }
 
@@ -426,11 +432,35 @@ object MmkvManager {
      */
     fun removeSubscription(subid: String) {
         subStorage.remove(subid)
+        subInfoStorage.remove(subid)
         val subsList = decodeSubsList()
         subsList.remove(subid)
         encodeSubsList(subsList)
 
         removeServerViaSubid(subid)
+    }
+
+    /**
+     * Caches the quota info fetched for a subscription.
+     *
+     * @param subid The subscription ID.
+     * @param info The subscription info.
+     */
+    fun encodeSubscriptionInfo(subid: String, info: SubscriptionInfo) {
+        if (subid.isBlank()) return
+        subInfoStorage.encode(subid, JsonUtil.toJson(info))
+    }
+
+    /**
+     * Decodes the cached quota info of a subscription.
+     *
+     * @param subid The subscription ID.
+     * @return The cached subscription info, or null when nothing was cached.
+     */
+    fun decodeSubscriptionInfo(subid: String): SubscriptionInfo? {
+        if (subid.isBlank()) return null
+        val json = subInfoStorage.decodeString(subid) ?: return null
+        return JsonUtil.fromJsonSafe(json, SubscriptionInfo::class.java)
     }
 
     /**
